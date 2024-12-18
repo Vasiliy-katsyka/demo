@@ -7015,13 +7015,14 @@
     let timeLeftGyro = 30;
     let gameIntervalGyro;
     let snowflakes = [];
-    let playerX = window.innerWidth / 2 - playerSize / 2;
-    let playerY = window.innerHeight - playerSize * 2;
-    let leagueMultiplier = leagues[currentLeagueIndex].multiplier; // Get the current multiplier
+    let playerX = (window.innerWidth - playerSize) / 2; // Center horizontally
+    let playerY = window.innerHeight / 2 - playerSize / 2; // Center vertically
 
-    // Initialize player
+    // Initialize player (Corrected positioning)
     gyroPlayer.style.left = playerX + 'px';
-    gyroPlayer.style.bottom = playerY + 'px';
+    gyroPlayer.style.top = playerY + 'px'; // Use 'top' instead of 'bottom'
+    gyroPlayer.style.width = playerSize + 'px'; // Explicitly set width and height
+    gyroPlayer.style.height = playerSize + 'px';
     gyroPlayer.style.backgroundImage = `url(${skins[0].imageUrl})`;
 
 
@@ -7092,11 +7093,12 @@
           gyroScore.textContent = score;
           gyroTimer.textContent = timeLeftGyro;
           snowflakes = [];
-          playerX = window.innerWidth / 2 - playerSize / 2;
-          playerY = window.innerHeight - playerSize * 2;
+          // Corrected player initialization
+          playerX = (window.innerWidth - playerSize) / 2;
+          playerY = (window.innerHeight - playerSize) / 2;
           gyroPlayer.style.left = playerX + 'px';
-          gyroPlayer.style.bottom = playerY + 'px';
-          gameIntervalGyro = setInterval(gameLoopGyro, 1000);
+          gyroPlayer.style.top = playerY + 'px';
+          gameIntervalGyro = setInterval(gameLoopGyro, 100); // Start the interval
           updateSnowflakes();
           updateLeague();
         } else {

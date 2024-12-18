@@ -1992,8 +1992,8 @@
 
     .gyro-game-popup .player {
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 150px;
+      height: 150px;
       background-size: cover; /* Ensure the image covers the entire area */
       border-radius: 50%; /* Make it a circle */
     }
@@ -7010,7 +7010,7 @@
     const gyroPlayer = document.getElementById('gyroPlayer');
     const gyroScore = document.getElementById('gyroScore');
     const gyroTimer = document.getElementById('gyroTimer');
-    const playerSize = 50; 
+    const playerSize = 150; 
     let score = 0;
     let timeLeftGyro = 30;
     let gameIntervalGyro;
@@ -7026,41 +7026,45 @@
     gyroPlayer.style.width = playerSize + 'px'; 
     gyroPlayer.style.height = playerSize + 'px';
     gyroPlayer.style.backgroundImage = `url(${skins[0].imageUrl})`;
-
-
+    let leagueMultiplier = leagues[currentLeagueIndex].multiplier;
+    let snowflakeMoveInterval;
 
     // Function to create a snowflake
-    function createSnowflake() {
-      let snowflake = document.createElement('div');
-      snowflake.classList.add('snowflake');
-      snowflake.style.left = Math.random() * (window.innerWidth - 30) + 'px';
-      snowflake.style.top = '-30px'; // Start above the screen
-      snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's'; // Vary animation speed
-      gyroGamePopup.appendChild(snowflake);
-      snowflakes.push(snowflake);
+    function createSnowflake(delay) {
+        let snowflake = document.createElement('div');
+        snowflake.classList.add('snowflake');
+        snowflake.style.left = 50 + (Math.random() * (window.innerWidth - 100)) + 'px'; // Adjusted for better distribution
+        snowflake.style.top = '-30px';
+        snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+
+        // Set the initial timeout for the snowflake
+        setTimeout(() => {
+            gyroGamePopup.appendChild(snowflake);
+            snowflakes.push(snowflake);
+        }, delay);
     }
 
-    // Function to move snowflakes
+    // Function to move snowflakes (remains inside gameLoopGyro)
     function moveSnowflakes() {
       snowflakes.forEach(snowflake => {
-        let top = parseInt(snowflake.style.top);
-        top += 5; 
-        snowflake.style.top = top + 'px';
+          let top = parseInt(snowflake.style.top);
+          top += 5; // Adjust speed as needed
+          snowflake.style.top = top + 'px';
 
-        // Check for collision
-        if (collisionDetection(snowflake, gyroPlayer)) {
-          score += 1000 * leagueMultiplier;
-          gyroScore.textContent = score;
-          showClickText2(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
-          gyroGamePopup.removeChild(snowflake);
-          snowflakes.splice(snowflakes.indexOf(snowflake), 1);
-        }
+          // Collision detection (unchanged)
+          if (collisionDetection(snowflake, gyroPlayer)) {
+              score += 1000 * leagueMultiplier;
+              gyroScore.textContent = score;
+              showClickText2(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
+              gyroGamePopup.removeChild(snowflake);
+              snowflakes.splice(snowflakes.indexOf(snowflake), 1);
+          }
 
-        // Remove snowflake if it goes off-screen
-        if (top > window.innerHeight) {
-          gyroGamePopup.removeChild(snowflake);
-          snowflakes.splice(snowflakes.indexOf(snowflake), 1);
-        }
+          // Remove if off-screen
+          if (top > window.innerHeight) {
+              gyroGamePopup.removeChild(snowflake);
+              snowflakes.splice(snowflakes.indexOf(snowflake), 1);
+          }
       });
     }
 
@@ -7090,23 +7094,24 @@
 
     // Function to start the gyroscope game
     function startOrientationGame() {
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
-        window.addEventListener('deviceorientation', handleOrientation, true);
-        timeLeftGyro = 30;
-        score = 0;
-        gyroScore.textContent = score;
-        gyroTimer.textContent = timeLeftGyro;
-        snowflakes = [];
-        playerX = (window.innerWidth - playerSize) / 2;
-        playerY = (window.innerHeight - playerSize) / 2;
-        gyroPlayer.style.left = playerX + 'px';
-        gyroPlayer.style.top = playerY + 'px';
-        gameIntervalGyro = setInterval(gameLoopGyro, 100); 
-        updateSnowflakes();
-        updateLeague();
-      } else {
-        WebApp.alert('Device orientation is not supported on this device.');
-      }
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            timeLeftGyro = 30;
+            score = 0;
+            gyroScore.textContent = score;
+            gyroTimer.textContent = timeLeftGyro;
+            snowflakes = [];
+            playerX = (window.innerWidth - playerSize) / 2;
+            playerY = (window.innerHeight - playerSize) / 2;
+            gyroPlayer.style.left = playerX + 'px';
+            gyroPlayer.style.top = playerY + 'px';
+            gameIntervalGyro = setInterval(gameLoopGyro, 1000); // Main game loop (1 second)
+            snowflakeMoveInterval = setInterval(moveSnowflakes, 50); // Snowflake movement (50ms)
+            updateSnowflakes();
+            updateLeague();
+        } else {
+            WebApp.alert('Device orientation is not supported on this device.');
+        }
     }
 
 
@@ -7130,20 +7135,20 @@
     // Game loop for the gyroscope game
     function gameLoopGyro() {
       if (timeLeftGyro > 0) {
-        timeLeftGyro--;
-        gyroTimer.textContent = timeLeftGyro;
-        moveSnowflakes();
-        updatePlayerPositionGyro();
+          timeLeftGyro--;
+          gyroTimer.textContent = timeLeftGyro;
+          updatePlayerPositionGyro();
       } else {
-        clearInterval(gameIntervalGyro);
-        endGyroGame();
+          clearInterval(gameIntervalGyro);
+          clearInterval(snowflakeMoveInterval); // Stop moving snowflakes
+          endOrientationGame();
       }
     }
 
     function endOrientationGame() {
       clickCount += score;
       updateClickCount();
-      WebApp.alert(`Game Over! Your score: ${score} clicks!`);
+      WebApp.showAlert(`Game Over! Your score: ${score} clicks!`);
       gyroGamePopup.style.display = 'none';
       window.removeEventListener('deviceorientation', handleOrientation, true); // Stop listening
       clearInterval(gameIntervalGyro);

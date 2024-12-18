@@ -7047,7 +7047,7 @@
         if (collisionDetection(snowflake, gyroPlayer)) {
           score += 1000 * leagueMultiplier;
           gyroScore.textContent = score;
-          showClickText(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
+          showClickText2(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
           gyroGamePopup.removeChild(snowflake);
           snowflakes.splice(snowflakes.indexOf(snowflake), 1);
         }
@@ -7070,7 +7070,7 @@
     }
 
     // Function to show click text
-    function showClickText(clicks, x, y) {
+    function showClickText2(clicks, x, y) {
       let clickText = document.createElement('div');
       clickText.classList.add('click-text');
       clickText.classList.add('show'); 

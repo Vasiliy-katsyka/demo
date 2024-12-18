@@ -5620,9 +5620,9 @@
 
     function openGyroGame() {
       WebApp.BackButton.show();
-      WebApp.BackButton.onClick(closeGyroGame); // Added close function
+      WebApp.BackButton.onClick(endOrientationGame); //Use endOrientationGame
       gyroGamePopup.style.display = 'block';
-      startGyroGame(); // Start the game when the popup opens
+      startOrientationGame(); // Start the orientation game
     }
 
     // Function to close the gyroscope game popup
@@ -7010,20 +7010,23 @@
     const gyroPlayer = document.getElementById('gyroPlayer');
     const gyroScore = document.getElementById('gyroScore');
     const gyroTimer = document.getElementById('gyroTimer');
-    const playerSize = 50; // Size of the player
+    const playerSize = 50; 
     let score = 0;
     let timeLeftGyro = 30;
     let gameIntervalGyro;
     let snowflakes = [];
-    let playerX = (window.innerWidth - playerSize) / 2; // Center horizontally
-    let playerY = window.innerHeight / 2 - playerSize / 2; // Center vertically
+    let playerX = (window.innerWidth - playerSize) / 2; 
+    let playerY = (window.innerHeight - playerSize) / 2; 
+    let playerSpeed = 5; // Adjust player speed as needed
 
-    // Initialize player (Corrected positioning)
+
+    // Initialize player
     gyroPlayer.style.left = playerX + 'px';
-    gyroPlayer.style.top = playerY + 'px'; // Use 'top' instead of 'bottom'
-    gyroPlayer.style.width = playerSize + 'px'; // Explicitly set width and height
+    gyroPlayer.style.top = playerY + 'px'; 
+    gyroPlayer.style.width = playerSize + 'px'; 
     gyroPlayer.style.height = playerSize + 'px';
     gyroPlayer.style.backgroundImage = `url(${skins[0].imageUrl})`;
+
 
 
     // Function to create a snowflake
@@ -7041,7 +7044,7 @@
     function moveSnowflakes() {
       snowflakes.forEach(snowflake => {
         let top = parseInt(snowflake.style.top);
-        top += 5; // Adjust speed
+        top += 5; 
         snowflake.style.top = top + 'px';
 
         // Check for collision
@@ -7053,13 +7056,14 @@
           snowflakes.splice(snowflakes.indexOf(snowflake), 1);
         }
 
-        //Remove snowflake if it goes off-screen
+        // Remove snowflake if it goes off-screen
         if (top > window.innerHeight) {
           gyroGamePopup.removeChild(snowflake);
           snowflakes.splice(snowflakes.indexOf(snowflake), 1);
         }
       });
     }
+
     // Function to detect collisions
     function collisionDetection(obj1, obj2) {
       let rect1 = obj1.getBoundingClientRect();
@@ -7085,26 +7089,42 @@
     }
 
     // Function to start the gyroscope game
-    function startGyroGame() {
-      WebApp.Gyroscope.start({ refresh_rate: 100 }, (started) => {
-        if (started) {
-          timeLeftGyro = 30;
-          score = 0;
-          gyroScore.textContent = score;
-          gyroTimer.textContent = timeLeftGyro;
-          snowflakes = [];
-          // Corrected player initialization
-          playerX = (window.innerWidth - playerSize) / 2;
-          playerY = (window.innerHeight - playerSize) / 2;
-          gyroPlayer.style.left = playerX + 'px';
-          gyroPlayer.style.top = playerY + 'px';
-          gameIntervalGyro = setInterval(gameLoopGyro, 100); // Start the interval
-          updateSnowflakes();
-          updateLeague();
-        } else {
-          WebApp.alert('Gyroscope not available');
-        }
-      });
+    function startOrientationGame() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        timeLeftGyro = 30;
+        score = 0;
+        gyroScore.textContent = score;
+        gyroTimer.textContent = timeLeftGyro;
+        snowflakes = [];
+        playerX = (window.innerWidth - playerSize) / 2;
+        playerY = (window.innerHeight - playerSize) / 2;
+        gyroPlayer.style.left = playerX + 'px';
+        gyroPlayer.style.top = playerY + 'px';
+        gameIntervalGyro = setInterval(gameLoopGyro, 100); 
+        updateSnowflakes();
+        updateLeague();
+      } else {
+        WebApp.alert('Device orientation is not supported on this device.');
+      }
+    }
+
+
+    // Handle device orientation event
+    function handleOrientation(event) {
+      let tiltLR = event.gamma; // Left (negative values) or right (positive values)
+      let tiltFB = event.beta; // Forward (negative values) or backward (positive values)
+
+      // Adjust sensitivity as needed
+      let moveX = tiltLR * playerSpeed; 
+      let moveY = tiltFB * playerSpeed;
+
+      // Keep player within screen bounds
+      playerX = Math.max(0, Math.min(playerX + moveX, window.innerWidth - playerSize));
+      playerY = Math.max(0, Math.min(playerY + moveY, window.innerHeight - playerSize));
+
+      gyroPlayer.style.left = playerX + 'px';
+      gyroPlayer.style.top = playerY + 'px';
     }
 
     // Game loop for the gyroscope game
@@ -7120,13 +7140,14 @@
       }
     }
 
-    function endGyroGame() {
+    function endOrientationGame() {
       clickCount += score;
       updateClickCount();
       WebApp.alert(`Game Over! Your score: ${score} clicks!`);
       gyroGamePopup.style.display = 'none';
+      window.removeEventListener('deviceorientation', handleOrientation, true); // Stop listening
+      clearInterval(gameIntervalGyro);
     }
-
     // Update player position based on gyroscope data
     function updatePlayerPositionGyro() {
       let maxX = window.innerWidth - playerSize;
@@ -7147,10 +7168,7 @@
 
     // Add event listener for the popup to hide when the game ends
     gyroGamePopup.addEventListener('click', function() {
-      gyroGamePopup.style.display = 'none'; 
-      // Stop Gyroscope tracking
-      WebApp.Gyroscope.stop();
-      clearInterval(gameIntervalGyro);
+      endOrientationGame();
     });
 
     // Function to calculate reward amount based on user balance

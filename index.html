@@ -7074,14 +7074,14 @@
           // Bomb collision detection
           if (snowflake.classList.contains('bomb') && collisionDetection(snowflake, gyroPlayer)) {
               score = 0;
-              gyroScore.textContent = score;
+              gyroScore.textContent = getRewardAmount(score);
               showClickText2(0, snowflake.offsetLeft, snowflake.offsetTop, true); // Red click text
               applyVignette(); // Apply vignette effect
               gyroGamePopup.removeChild(snowflake);
               snowflakes.splice(snowflakes.indexOf(snowflake), 1);
           } else if (!snowflake.classList.contains('bomb') && collisionDetection(snowflake, gyroPlayer)) { //Regular snowflake collision
               score += 1000 * leagueMultiplier;
-              gyroScore.textContent = score;
+              gyroScore.textContent = getRewardAmount(score);
               showClickText2(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
               gyroGamePopup.removeChild(snowflake);
               snowflakes.splice(snowflakes.indexOf(snowflake), 1);
@@ -7113,7 +7113,7 @@
       if (isBomb) {
           clickText.style.color = 'red'; // Red text for bomb explosions
       }
-      clickText.textContent = `+${clicks}`;
+      clickText.textContent = `+${getRewardAmount(clicks)}`;
       clickText.style.left = x + 'px';
       clickText.style.top = y + 'px';
       gyroGamePopup.appendChild(clickText);
@@ -7131,7 +7131,7 @@
         window.addEventListener('deviceorientation', handleOrientation, true);
         timeLeftGyro = 30;
         score = 0;
-        gyroScore.textContent = score;
+        gyroScore.textContent =  getRewardAmount(score);
         gyroTimer.textContent = timeLeftGyro;
         snowflakes = [];
         playerX = (window.innerWidth - playerSize) / 2;
@@ -7210,9 +7210,9 @@
     }
 
     function endOrientationGame() {
-      clickCount += score;
+      clickCount += getRewardAmount(score);
       updateClickCount();
-      WebApp.showAlert(`Game Over! Your score: ${score} clicks!`);
+      WebApp.showAlert(`Game Over! Your score: ${getRewardAmount(score)} clicks!`);
       gyroGamePopup.style.display = 'none';
       window.removeEventListener('deviceorientation', handleOrientation, true); // Stop listening
       clearInterval(gameIntervalGyro);

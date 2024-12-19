@@ -7010,7 +7010,7 @@
     const gyroPlayer = document.getElementById('gyroPlayer');
     const gyroScore = document.getElementById('gyroScore');
     const gyroTimer = document.getElementById('gyroTimer');
-    const playerSize = 150; 
+    const playerSize = 100; 
     let score = 0;
     let timeLeftGyro = 30;
     let gameIntervalGyro;
@@ -7125,6 +7125,7 @@
 
     // Function to start the gyroscope game
     function startOrientationGame() {
+      showMessage("Rotate screen to control!")
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
         WebApp.lockOrientation();
         window.addEventListener('deviceorientation', handleOrientation, true);

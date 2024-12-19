@@ -4538,8 +4538,8 @@
       if (!WebApp.isExpanded) {
         WebApp.expand();
       }
-      WebApp.setHeaderColor('#000000');
-      WebApp.setBackgroundColor('#000000');
+      WebApp.setHeaderColor('#3d0000');
+      WebApp.setBackgroundColor('#3d0000');
       WebApp.disableVerticalSwipes();
     }, 20000); 
 
@@ -6853,7 +6853,7 @@
     let storyBonusClaimed = localStorage.getItem('storyBonusClaimed') === 'true'; // Flag to track story sharing
 
     // Theme Customization
-    let headerColor = localStorage.getItem('headerColor') || '#000000';
+    let headerColor = localStorage.getItem('headerColor') || '#3d0000';
     let gradientColor1 = localStorage.getItem('gradientColor1') || '#ffdd00';
     let gradientColor2 = localStorage.getItem('gradientColor2') || '#000000';
     let backgroundImage = localStorage.getItem('backgroundImage') || null;
@@ -7019,6 +7019,16 @@
     let playerY = (window.innerHeight - playerSize) / 2; 
     let playerSpeed = 5; // Adjust player speed as needed
 
+    function getEquippedSkinImageUrl() {
+      if (equippedSkin === "Custom Skin" && customSkin.imageUrl) {
+          return customSkin.imageUrl; 
+      } else if (equippedSkin) { // Check if a skin is equipped
+          const equippedSkinData = skins.find(skin => skin.name === equippedSkin);
+          return equippedSkinData ? equippedSkinData.imageUrl : null;
+      } else {
+          return defaultSkin.imageUrl; // Default to the default skin image
+      }
+    }
 
     // Initialize player
     gyroPlayer.style.left = playerX + 'px';
@@ -7028,31 +7038,48 @@
     gyroPlayer.style.backgroundImage = `url(${skins[0].imageUrl})`;
     let leagueMultiplier = leagues[currentLeagueIndex].multiplier;
     let snowflakeMoveInterval;
+    const bombImageUrl = "https://i.ibb.co/PDvfwGC/vasiliy939-a-cartoon-3d-rendered-bomb-white-background-red-sc-7e1c7d44-2356-450c-90dc-06f49927e57d-1.png";
 
     // Function to create a snowflake
     function createSnowflake(delay) {
-        let snowflake = document.createElement('div');
-        snowflake.classList.add('snowflake');
-        snowflake.style.left = 50 + (Math.random() * (window.innerWidth - 100)) + 'px'; // Adjusted for better distribution
-        snowflake.style.top = '-30px';
-        snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      const isBomb = Math.random() < 0.3; // 10% chance of a bomb
+      let snowflake = document.createElement('div');
+      snowflake.classList.add('snowflake');
+      snowflake.style.left = 50 + (Math.random() * (window.innerWidth - 100)) + 'px';
+      snowflake.style.top = '-50px';
+      snowflake.style.width = '40px';
+      snowflake.style.height = '40px';
+      snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
 
-        // Set the initial timeout for the snowflake
-        setTimeout(() => {
-            gyroGamePopup.appendChild(snowflake);
-            snowflakes.push(snowflake);
-        }, delay);
+      if (isBomb) {
+          snowflake.classList.add('bomb');
+          snowflake.style.backgroundImage = `url(${bombImageUrl})`;
+          snowflake.style.width = '50px';
+          snowflake.style.height = '50px';
+      }
+
+      setTimeout(() => {
+          gyroGamePopup.appendChild(snowflake);
+          snowflakes.push(snowflake);
+      }, delay);
     }
 
     // Function to move snowflakes (remains inside gameLoopGyro)
     function moveSnowflakes() {
       snowflakes.forEach(snowflake => {
           let top = parseInt(snowflake.style.top);
-          top += 5; // Adjust speed as needed
+          top += 7;
           snowflake.style.top = top + 'px';
 
-          // Collision detection (unchanged)
-          if (collisionDetection(snowflake, gyroPlayer)) {
+          // Bomb collision detection
+          if (snowflake.classList.contains('bomb') && collisionDetection(snowflake, gyroPlayer)) {
+              score = 0;
+              gyroScore.textContent = score;
+              showClickText2(0, snowflake.offsetLeft, snowflake.offsetTop, true); // Red click text
+              applyVignette(); // Apply vignette effect
+              gyroGamePopup.removeChild(snowflake);
+              snowflakes.splice(snowflakes.indexOf(snowflake), 1);
+          } else if (!snowflake.classList.contains('bomb') && collisionDetection(snowflake, gyroPlayer)) { //Regular snowflake collision
               score += 1000 * leagueMultiplier;
               gyroScore.textContent = score;
               showClickText2(1000 * leagueMultiplier, snowflake.offsetLeft, snowflake.offsetTop);
@@ -7060,7 +7087,7 @@
               snowflakes.splice(snowflakes.indexOf(snowflake), 1);
           }
 
-          // Remove if off-screen
+          //Remove snowflake if it goes off-screen
           if (top > window.innerHeight) {
               gyroGamePopup.removeChild(snowflake);
               snowflakes.splice(snowflakes.indexOf(snowflake), 1);
@@ -7079,39 +7106,51 @@
     }
 
     // Function to show click text
-    function showClickText2(clicks, x, y) {
+    function showClickText2(clicks, x, y, isBomb = false) {
       let clickText = document.createElement('div');
       clickText.classList.add('click-text');
-      clickText.classList.add('show'); 
+      clickText.classList.add('show');
+      if (isBomb) {
+          clickText.style.color = 'red'; // Red text for bomb explosions
+      }
       clickText.textContent = `+${clicks}`;
       clickText.style.left = x + 'px';
       clickText.style.top = y + 'px';
       gyroGamePopup.appendChild(clickText);
       setTimeout(() => {
-        gyroGamePopup.removeChild(clickText);
+          gyroGamePopup.removeChild(clickText);
       }, 1000);
     }
 
+
     // Function to start the gyroscope game
     function startOrientationGame() {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-            timeLeftGyro = 30;
-            score = 0;
-            gyroScore.textContent = score;
-            gyroTimer.textContent = timeLeftGyro;
-            snowflakes = [];
-            playerX = (window.innerWidth - playerSize) / 2;
-            playerY = (window.innerHeight - playerSize) / 2;
-            gyroPlayer.style.left = playerX + 'px';
-            gyroPlayer.style.top = playerY + 'px';
-            gameIntervalGyro = setInterval(gameLoopGyro, 1000); // Main game loop (1 second)
-            snowflakeMoveInterval = setInterval(moveSnowflakes, 50); // Snowflake movement (50ms)
-            updateSnowflakes();
-            updateLeague();
-        } else {
-            WebApp.alert('Device orientation is not supported on this device.');
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof window.addEventListener === 'function') {
+        WebApp.lockOrientation();
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        timeLeftGyro = 30;
+        score = 0;
+        gyroScore.textContent = score;
+        gyroTimer.textContent = timeLeftGyro;
+        snowflakes = [];
+        playerX = (window.innerWidth - playerSize) / 2;
+        playerY = (window.innerHeight - playerSize) / 2;
+        gyroPlayer.style.left = playerX + 'px';
+        gyroPlayer.style.top = playerY + 'px';
+        gameIntervalGyro = setInterval(gameLoopGyro, 1000); 
+        snowflakeMoveInterval = setInterval(moveSnowflakes, 50); 
+
+        // Create initial snowflakes with staggered delays
+        const initialSnowflakes = 20; // Number of initial snowflakes
+        for (let i = 0; i < initialSnowflakes; i++) {
+            const delay = i * 100; // Delay of 100ms * i
+            createSnowflake(delay);
         }
+
+        updateLeague();
+      } else {
+        WebApp.alert('Device orientation is not supported on this device.');
+      }
     }
 
 
@@ -7132,15 +7171,39 @@
       gyroPlayer.style.top = playerY + 'px';
     }
 
+    function applyVignette() {
+      const vignette = document.createElement('div');
+      vignette.style.position = 'absolute';
+      vignette.style.top = '0';
+      vignette.style.left = '0';
+      vignette.style.width = '100%';
+      vignette.style.height = '100%';
+      vignette.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'; // Dark red
+      vignette.style.borderRadius = '10px';
+      gyroGamePopup.appendChild(vignette);
+
+      setTimeout(() => {
+          gyroGamePopup.removeChild(vignette);
+      }, 1000); // Remove after 1 second
+    }
+
     // Game loop for the gyroscope game
     function gameLoopGyro() {
       if (timeLeftGyro > 0) {
           timeLeftGyro--;
           gyroTimer.textContent = timeLeftGyro;
+          moveSnowflakes();
           updatePlayerPositionGyro();
+
+          // Continuously add new snowflakes at random intervals
+          const maxSnowflakes = 50; // Adjust for desired number of snowflakes
+          if (snowflakes.length < maxSnowflakes) {
+              const delay = Math.random() * 2000; // Random delay between 0 and 2 seconds
+              createSnowflake(delay);
+          }
       } else {
           clearInterval(gameIntervalGyro);
-          clearInterval(snowflakeMoveInterval); // Stop moving snowflakes
+          clearInterval(snowflakeMoveInterval); 
           endOrientationGame();
       }
     }
@@ -7152,7 +7215,9 @@
       gyroGamePopup.style.display = 'none';
       window.removeEventListener('deviceorientation', handleOrientation, true); // Stop listening
       clearInterval(gameIntervalGyro);
+      WebApp.unlockOrientation();
     }
+
     // Update player position based on gyroscope data
     function updatePlayerPositionGyro() {
       let maxX = window.innerWidth - playerSize;
@@ -7203,7 +7268,7 @@
     }
 
     function loadTheme() {
-      headerColor = localStorage.getItem('headerColor') || '#000000'; // Load header color     
+      headerColor = localStorage.getItem('headerColor') || '#3d0000'; // Load header color     
       gradientColor1 = localStorage.getItem('gradientColor1') || '#ffdd00';
       gradientColor2 = localStorage.getItem('gradientColor2') || '#000000';
       backgroundImage = localStorage.getItem('backgroundImage') || null; // Load background image
